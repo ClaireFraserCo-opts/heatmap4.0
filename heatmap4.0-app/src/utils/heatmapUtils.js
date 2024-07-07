@@ -1,5 +1,4 @@
-// src/utils/heatmapUtils.js
-// This file contains utility functions used in the heatmap.
+// heatmapUtils.js
 
 import stopwords from './stopwords';
 
@@ -39,6 +38,17 @@ export function populateHeatmapData(heatmapData, data, speakers, timeIntervals) 
               heatmapData[speakerIndex][i].words[word] = (heatmapData[speakerIndex][i].words[word] || 0) + 1;
             }
           });
+        } else if (Array.isArray(d.utterances)) {
+          d.utterances.forEach(utterance => {
+            if (utterance.speaker === speaker) {
+              utterance.words.forEach(wordObj => {
+                const word = wordObj.text.toLowerCase();
+                if (!stopwords.includes(word)) {
+                  heatmapData[speakerIndex][i].words[word] = (heatmapData[speakerIndex][i].words[word] || 0) + 1;
+                }
+              });
+            }
+          });
         }
       }
     }
@@ -49,8 +59,10 @@ export function generateTooltipContent(cell, data) {
   const { speaker, interval, count, words } = cell;
   const timeStart = interval * 30000;
   const timeEnd = timeStart + 30000;
-  const totalWords = Object.values(words).reduce((acc, curr) => acc + curr, 0);
-  const uniqueWords = Object.keys(words).length;
+  const totalWords = calculateTotalWords(data, speaker);
+  const uniqueWords = calculateUniqueWords(words);
+  const topWord = calculateTopWord(words);
+
   const percentage = data ? ((count / data.length) * 100).toFixed(2) : 0;
 
   return `
@@ -60,6 +72,7 @@ export function generateTooltipContent(cell, data) {
     <strong>Total Words:</strong> ${totalWords}<br>
     <strong>Unique Words:</strong> ${uniqueWords}<br>
     <strong>Percentage of Total:</strong> ${percentage}%<br>
+    <strong>Top Word:</strong> ${topWord}<br>
   `;
 }
 
@@ -69,70 +82,45 @@ export function formatTime(milliseconds) {
   return date.toISOString().substr(11, 8);
 }
 
-export function calculateTotalWords(data) {
+export function calculateTotalWords(data, speaker) {
   if (!data || !Array.isArray(data)) {
     return 0;
   }
 
-  let totalWords = 0;
-  data.forEach(item => {
-    if (item.words && Array.isArray(item.words)) {
-      totalWords += item.words.length;
-    }
-  });
+  const speakerData = data.find(d => d.speaker === speaker || d.speaker_name === speaker);
+  if (!speakerData) return 0;
 
-  return totalWords;
+  if (Array.isArray(speakerData.words)) {
+    return speakerData.words.length;
+  } else if (Array.isArray(speakerData.utterances)) {
+    return speakerData.utterances.reduce((total, utterance) => {
+      if (utterance.speaker === speaker && Array.isArray(utterance.words)) {
+        return total + utterance.words.length;
+      }
+      return total;
+    }, 0);
+  }
+
+  return 0;
 }
 
-export function calculateUniqueWords(heatmapData) {
-  let uniqueWords = new Set();
-  heatmapData.forEach(speaker => {
-    speaker.forEach(intervalData => {
-      if (intervalData.words) {
-        Object.keys(intervalData.words).forEach(word => {
-          uniqueWords.add(word);
-        });
-      }
-    });
-  });
+export function calculateUniqueWords(words) {
+  if (!words) return 0;
+
+  const uniqueWords = new Set(Object.keys(words));
   return uniqueWords.size;
 }
 
-export function calculatePercentageOfTotal(heatmapData, totalWords) {
-  const percentages = [];
-  heatmapData.forEach(speakerData => {
-    let speakerTotal = 0;
-    speakerData.forEach(intervalData => {
-      if (intervalData.words) {
-        Object.values(intervalData.words).forEach(count => {
-          speakerTotal += count;
-        });
-      }
-    });
-    const percentage = totalWords > 0 ? (speakerTotal / totalWords) * 100 : 0;
-    percentages.push(percentage);
-  });
-  return percentages;
-}
+export function calculateTopWord(words) {
+  if (!words) return '';
 
-export function calculateTopWord(heatmapData) {
-  const topWords = [];
-  heatmapData.forEach(speakerData => {
-    let maxCount = 0;
-    let topWord = '';
-    speakerData.forEach(intervalData => {
-      if (intervalData.words) {
-        Object.entries(intervalData.words).forEach(([word, count]) => {
-          if (count > maxCount) {
-            maxCount = count;
-            topWord = word;
-          }
-        });
-      }
-    });
-    topWords.push(topWord);
+  let maxCount = 0;
+  let topWord = '';
+  Object.entries(words).forEach(([word, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      topWord = word;
+    }
   });
-  return topWords;
+  return topWord;
 }
-
-  

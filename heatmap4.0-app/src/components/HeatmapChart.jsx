@@ -1,7 +1,9 @@
+// HeatmapChart.jsx
+
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
-import { calculateTimeIntervals, initializeHeatmapData, populateHeatmapData, generateTooltipContent, formatTime, calculateTotalWords, calculateUniqueWords, calculatePercentageOfTotal, calculateTopWord } from '../utils/heatmapUtils';
+import { calculateTimeIntervals, initializeHeatmapData, populateHeatmapData, generateTooltipContent, formatTime } from '../utils/heatmapUtils';
 
 const HeatmapChart = ({ data, tooltipRef, setTooltipContent }) => {
   const svgRef = useRef();
@@ -38,8 +40,9 @@ const HeatmapChart = ({ data, tooltipRef, setTooltipContent }) => {
       .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     const cells = g.selectAll('rect')
-      .data(heatmapData.flatMap((row, i) => row.map((cell, j) => ({ cell, x: j, y: i }))))
-      .enter()
+      .data(heatmapData.flatMap((row, i) => row.map((cell, j) => ({ cell, x: j, y: i }))));
+
+    cells.enter()
       .append('rect')
       .attr('x', d => xScale(d.x))
       .attr('y', d => yScale(d.cell.speaker))
@@ -90,7 +93,8 @@ const HeatmapChart = ({ data, tooltipRef, setTooltipContent }) => {
       .attr('text-anchor', 'left')
       .style('font-size', '22px')
       .text('Conversation Heatmap');
-  }, [data, tooltipRef, setTooltipContent]);
+
+  }, [data]);
 
   return <svg ref={svgRef} width={700} height={650}></svg>;
 };
@@ -101,9 +105,19 @@ HeatmapChart.propTypes = {
     speaker_name: PropTypes.string,
     start: PropTypes.number.isRequired,
     end: PropTypes.number.isRequired,
-    words: PropTypes.arrayOf(PropTypes.shape({
-      text: PropTypes.string.isRequired
-    })),
+    words: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.shape({
+        text: PropTypes.string.isRequired
+      })),
+      PropTypes.shape({
+        utterances: PropTypes.arrayOf(PropTypes.shape({
+          speaker: PropTypes.string.isRequired,
+          words: PropTypes.arrayOf(PropTypes.shape({
+            text: PropTypes.string.isRequired
+          })).isRequired
+        })).isRequired
+      })
+    ]),
     word_count: PropTypes.number
   })).isRequired,
   tooltipRef: PropTypes.object.isRequired,
