@@ -1,127 +1,127 @@
-// HeatmapChart.jsx
-
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
-import { calculateTimeIntervals, initializeHeatmapData, populateHeatmapData, generateTooltipContent, formatTime } from '../utils/heatmapUtils';
+import {
+calculateTimeIntervals,
+initializeHeatmapData,
+populateHeatmapData,
+generateTooltipContent
+} from '../utils/heatmapUtils';
+import ScaleLegend from './ScaleLegend';
 
 const HeatmapChart = ({ data, tooltipRef, setTooltipContent }) => {
-  const svgRef = useRef();
+    const svgRef = useRef();
+    const [heatmapData, setHeatmapData] = useState([]);
 
-  useEffect(() => {
-    if (!data || !data.length) return;
+    useEffect(() => {
+        if (!data || !data.length) return;
 
-    const svg = d3.select(svgRef.current);
-    const margin = { top: 50, right: 25, bottom: 100, left: 150 };
-    const width = 700 - margin.left - margin.right;
-    const height = 650 - margin.top - margin.bottom;
+        const svg = d3.select(svgRef.current);
+        const margin = { top: 50, right: 25, bottom: 100, left: 150 };
+        const width = 700 - margin.left - margin.right;
+        const height = 650 - margin.top - margin.bottom;
 
-    const speakers = [...new Set(data.map(d => d.speaker || d.speaker_name))];
-    const timeIntervals = calculateTimeIntervals(data);
-    const heatmapData = initializeHeatmapData(speakers, timeIntervals);
-    populateHeatmapData(heatmapData, data, speakers, timeIntervals);
+        const speakers = [...new Set(data.map(d => d.speaker || d.speaker_name))];
+        const timeIntervals = calculateTimeIntervals(data);
+        const initializedHeatmapData = initializeHeatmapData(speakers, timeIntervals);
+        populateHeatmapData(initializedHeatmapData, data, speakers, timeIntervals);
 
-    const xScale = d3.scaleBand()
-      .domain(d3.range(timeIntervals.length))
-      .range([0, width])
-      .padding(0.05);
+        setHeatmapData(initializedHeatmapData);
 
-    const yScale = d3.scaleBand()
-      .domain(speakers)
-      .range([0, height])
-      .padding(0.05);
+        const xScale = d3.scaleBand()
+            .domain(d3.range(timeIntervals.length))
+            .range([0, width])
+            .padding(0.05);
 
-    const colorScale = d3.scaleSequential(d3.interpolateInferno)
-      .domain([0, d3.max(heatmapData.flatMap(row => row.map(cell => cell.count)))]);
+        const yScale = d3.scaleBand()
+            .domain(speakers)
+            .range([0, height])
+            .padding(0.05);
 
-    svg.selectAll('*').remove();
+        const colorScale = d3.scaleSequential(d3.interpolateInferno)
+            .domain([0, d3.max(initializedHeatmapData.flatMap(row => row.map(cell => cell.count)))]);
 
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left}, ${margin.top})`);
+        svg.selectAll('*').remove();
 
-    const cells = g.selectAll('rect')
-      .data(heatmapData.flatMap((row, i) => row.map((cell, j) => ({ cell, x: j, y: i }))));
+        const g = svg.append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-    cells.enter()
-      .append('rect')
-      .attr('x', d => xScale(d.x))
-      .attr('y', d => yScale(d.cell.speaker))
-      .attr('width', xScale.bandwidth())
-      .attr('height', yScale.bandwidth())
-      .attr('fill', d => colorScale(d.cell.count))
-      .on('mouseover', handleMouseOver)
-      .on('mousemove', handleMouseMove)
-      .on('mouseout', handleMouseOut);
+        const cells = g.selectAll('rect')
+            .data(initializedHeatmapData.flatMap((row, i) => row.map((cell, j) => ({ cell, x: j, y: i }))));
 
-    function handleMouseOver(event, d) {
-      d3.select(this)
-        .style('stroke', 'black')
-        .style('stroke-width', 2);
+        cells.enter()
+            .append('rect')
+            .attr('x', d => xScale(d.x))
+            .attr('y', d => yScale(d.cell.speaker))
+            .attr('width', xScale.bandwidth())
+            .attr('height', yScale.bandwidth())
+            .attr('fill', d => colorScale(d.cell.count))
+            .on('mouseover', handleMouseOver)
+            .on('mousemove', handleMouseMove)
+            .on('mouseout', handleMouseOut);
 
-      setTooltipContent(generateTooltipContent(d.cell, data));
+        function handleMouseOver(event, d) {
+            d3.select(this)
+                .style('stroke', 'black')
+                .style('stroke-width', 2);
 
-      handleMouseMove(event);
-    }
+            setTooltipContent(generateTooltipContent(d.cell, data));
 
-    function handleMouseMove(event) {
-      tooltipRef.current.style.opacity = 1;
-      tooltipRef.current.style.left = `${event.pageX + 15}px`;
-      tooltipRef.current.style.top = `${event.pageY + 15}px`;
-    }
+            handleMouseMove(event);
+        }
 
-    function handleMouseOut() {
-      d3.select(this)
-        .style('stroke', 'none');
+        function handleMouseMove(event) {
+            tooltipRef.current.style.opacity = 1;
+            tooltipRef.current.style.left = `${event.pageX + 15}px`;
+            tooltipRef.current.style.top = `${event.pageY + 15}px`;
+        }
 
-      tooltipRef.current.style.opacity = 0;
-    }
+        function handleMouseOut() {
+            d3.select(this)
+                .style('stroke', 'none');
 
-    const yLabels = g.selectAll('.y-label')
-      .data(speakers)
-      .enter()
-      .append('text')
-      .attr('class', 'y-label')
-      .attr('x', -10)
-      .attr('y', d => yScale(d) + yScale.bandwidth() / 2)
-      .attr('text-anchor', 'end')
-      .attr('alignment-baseline', 'middle')
-      .text((d, i) => `Speaker ${i + 1}`);
+            tooltipRef.current.style.opacity = 0;
+        }
 
-    svg.append('text')
-      .attr('x', margin.left)
-      .attr('y', margin.top - 20)
-      .attr('text-anchor', 'left')
-      .style('font-size', '22px')
-      .text('Conversation Heatmap');
+        const yLabels = g.selectAll('.y-label')
+            .data(speakers)
+            .enter()
+            .append('text')
+            .attr('class', 'y-label')
+            .attr('x', -10)
+            .attr('y', d => yScale(d) + yScale.bandwidth() / 2)
+            .attr('text-anchor', 'end')
+            .attr('alignment-baseline', 'middle')
+            .text((d, i) => `Speaker ${i + 1}`);
 
-  }, [data]);
+        svg.append('text')
+            .attr('x', margin.left)
+            .attr('y', margin.top - 20)
+            .attr('text-anchor', 'left')
+            .style('font-size', '22px')
+            .text('Conversation Heatmap');
 
-  return <svg ref={svgRef} width={700} height={650}></svg>;
+    }, [data, setTooltipContent, tooltipRef]); // Include dependencies as needed
+
+    return (
+        <>
+            <svg ref={svgRef} width={700} height={650}></svg>
+            {heatmapData.length > 0 && (
+                <ScaleLegend
+                    colorScale={d3.scaleSequential(d3.interpolateInferno)
+                        .domain([0, d3.max(heatmapData.flatMap(row => row.map(cell => cell.count)))])}
+                    width={700}
+                    height={20}
+                    margin={{ left: 150, right: 25, top: 50, bottom: 0 }}
+                />
+            )}
+        </>
+    );
 };
-
 HeatmapChart.propTypes = {
-  data: PropTypes.arrayOf(PropTypes.shape({
-    speaker: PropTypes.string,
-    speaker_name: PropTypes.string,
-    start: PropTypes.number.isRequired,
-    end: PropTypes.number.isRequired,
-    words: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.shape({
-        text: PropTypes.string.isRequired
-      })),
-      PropTypes.shape({
-        utterances: PropTypes.arrayOf(PropTypes.shape({
-          speaker: PropTypes.string.isRequired,
-          words: PropTypes.arrayOf(PropTypes.shape({
-            text: PropTypes.string.isRequired
-          })).isRequired
-        })).isRequired
-      })
-    ]),
-    word_count: PropTypes.number
-  })).isRequired,
-  tooltipRef: PropTypes.object.isRequired,
-  setTooltipContent: PropTypes.func.isRequired,
+    data: PropTypes.array.isRequired,
+    tooltipRef: PropTypes.object.isRequired,
+    setTooltipContent: PropTypes.func.isRequired,
 };
 
 export default HeatmapChart;
