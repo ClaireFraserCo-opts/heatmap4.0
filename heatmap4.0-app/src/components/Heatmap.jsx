@@ -5,7 +5,7 @@ import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import HeatmapChart from './HeatmapChart';
 import Tooltip from './Tooltip';
-import '../components/Heatmap.css'; // Ensure Heatmap.css is imported
+import '../components/Heatmap.css';
 
 const Heatmap = ({ data }) => {
   const tooltipRef = useRef(null);

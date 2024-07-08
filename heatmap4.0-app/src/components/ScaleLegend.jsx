@@ -28,13 +28,13 @@ const ScaleLegend = ({ colorScale, width, height, margin }) => {
       .attr('x2', '100%')
       .attr('y2', '0%');
 
-    legendGradient.append('stop')
-      .attr('offset', '0%')
-      .attr('stop-color', colorScale.range()[0]);
+    const colorDomain = d3.range(0, 1, 1.0 / (legendWidth - 1));
 
-    legendGradient.append('stop')
-      .attr('offset', '100%')
-      .attr('stop-color', colorScale.range()[1]);
+    colorDomain.forEach((d, i) => {
+      legendGradient.append('stop')
+        .attr('offset', `${(i / (legendWidth - 1)) * 100}%`)
+        .attr('stop-color', colorScale(d));
+    });
 
     svg.append('rect')
       .attr('width', legendWidth)

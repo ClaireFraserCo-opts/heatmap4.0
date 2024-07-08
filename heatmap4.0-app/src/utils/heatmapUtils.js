@@ -9,6 +9,7 @@ export function calculateTimeIntervals(data) {
   return Array.from({ length: numIntervals }, (_, i) => i * 30);
 }
 
+
 export function initializeHeatmapData(speakers, timeIntervals) {
   return speakers.map(speaker => {
     return timeIntervals.map(interval => ({
