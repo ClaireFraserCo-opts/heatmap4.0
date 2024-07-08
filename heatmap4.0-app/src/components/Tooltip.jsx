@@ -1,5 +1,5 @@
 // src/components/Tooltip.jsx
-//This component will handle rendering the tooltip.
+//This component will handle rendering the tooltip. For displaying additional information such as top frequent words.
 import React from 'react';
 import PropTypes from 'prop-types';
 

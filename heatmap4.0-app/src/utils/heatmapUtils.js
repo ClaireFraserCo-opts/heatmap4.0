@@ -1,4 +1,4 @@
-// heatmapUtils.js
+// src/utils/heatmapUtils.js: Contains functions for parsing JSON data, calculating intervals, and extracting utterance details.
 
 import stopwords from './stopwords';
 

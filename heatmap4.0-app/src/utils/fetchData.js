@@ -1,4 +1,4 @@
-// src/utils/fetchData.js
+// src/utils/fetchData.js: Handles data fetching.
 
 export async function fetchData(filePath) {
     try {

@@ -1,3 +1,5 @@
+// src/components/ScaleLegend.jsx: Positioned at the bottom and centered.
+
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
@@ -11,7 +13,7 @@ const ScaleLegend = ({ colorScale, width, height, margin }) => {
     const legendHeight = height;
 
     const legendScale = d3.scaleLinear()
-      .domain(colorScale.domain())
+      .domain([0, 1]) // We're representing word frequency, so domain is [0, 1]
       .range([0, legendWidth]);
 
     const legendAxis = d3.axisBottom(legendScale)
@@ -46,7 +48,7 @@ const ScaleLegend = ({ colorScale, width, height, margin }) => {
       .call(legendAxis);
   }, [colorScale, width, height, margin]);
 
-  return <svg ref={legendRef} width={width} height={height + 30}></svg>; // Adjust height for the axis
+  return <svg ref={legendRef} width={width} height={height + 50}></svg>; // Adjust height for the axis
 };
 
 ScaleLegend.propTypes = {

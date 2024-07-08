@@ -1,5 +1,5 @@
 // src/utils/stopwords.js
-// This file contains the list of stopwords and the filter function.
+// This file contains the list of stopwords to be used in tokenization and the filter function.
 const stopwords = [
     'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
     'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
